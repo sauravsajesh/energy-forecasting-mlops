@@ -6,9 +6,9 @@ import mlflow.tensorflow
 import numpy as np
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-from src.data.sequence_builder import build_default_sequences, load_processed
+from src.data.sequence_builder import build_default_sequences, load_processed, build_default_sequences_scaled
 from src.models.lstm_model import build_lstm_model
-
+from src.data.scaling import inverse_scale_target
 
 def evaluate_multi_horizon(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     """
@@ -37,9 +37,7 @@ def main():
     dropout = 0.2
 
     # Load data
-    (X_train, y_train), (X_val, y_val), (X_test, y_test) = build_default_sequences(
-        lookback=lookback, horizon=horizon, target_col="load_MW"
-    )
+    (X_train, y_train, feature_scaler, target_scaler), (X_val, y_val), (X_test, y_test) = build_default_sequences_scaled()
     n_features = X_train.shape[2]
 
     # Configure MLflow (local tracking for now; Azure ML integration on a later day)
@@ -92,7 +90,12 @@ def main():
 
         # Evaluate on test set
         y_pred = model.predict(X_test, batch_size=batch_size)
-        metrics = evaluate_multi_horizon(y_true=y_test, y_pred=y_pred)
+
+# Inverse transform predictions and true values
+        y_test_inv = inverse_scale_target(y_test, target_scaler)
+        y_pred_inv = inverse_scale_target(y_pred, target_scaler)
+
+        metrics = evaluate_multi_horizon(y_true=y_test_inv, y_pred=y_pred_inv)
 
         print("=== LSTM (24h ahead) Test Metrics ===")
         print(f"MAE : {metrics['mae']:.3f}")

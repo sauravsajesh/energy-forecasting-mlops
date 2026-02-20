@@ -4,6 +4,8 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 
+from src.data.scaling import fit_scalers, scale_data, inverse_scale_target
+
 PROCESSED_PATH = Path("data/processed/germany_energy_processed.csv")
 
 
@@ -92,3 +94,35 @@ if __name__ == "__main__":
     print("X_train:", X_train.shape, "y_train:", y_train.shape)
     print("X_val:  ", X_val.shape, "y_val:  ", y_val.shape)
     print("X_test: ", X_test.shape, "y_test: ", y_test.shape)
+
+def build_default_sequences_scaled(lookback: int = 24, horizon: int = 24, target_col: str = "load_MW"):
+    df = load_processed()
+    feature_scaler, target_scaler = fit_scalers(df, target_col=target_col)
+    
+    # Scale features
+    feature_cols = [c for c in df.columns if c != target_col]
+    df_scaled_features = pd.DataFrame(
+        feature_scaler.transform(df[feature_cols]),
+        columns=feature_cols,
+        index=df.index,
+    )
+    
+    # Scale target ALSO (this was the bug - target was left unscaled)
+    df_scaled_target = pd.DataFrame(
+        target_scaler.transform(df[[target_col]]),
+        columns=[target_col],
+        index=df.index,
+    )
+    
+    df_scaled = pd.concat([df_scaled_features, df_scaled_target], axis=1)
+    
+    # Build sequences on fully scaled data
+    X, y = create_supervised_sequences(df_scaled, lookback=lookback, horizon=horizon)
+    
+    (X_train, y_train), (X_val, y_val), (X_test, y_test) = time_series_train_val_test_split(X, y)
+    
+    return (
+        (X_train, y_train, feature_scaler, target_scaler),
+        (X_val, y_val),
+        (X_test, y_test),
+    )
