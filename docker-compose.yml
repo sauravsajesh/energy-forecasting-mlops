@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  edge-service:
+    build:
+      context: ./edge_service
+      dockerfile: Dockerfile
+    container_name: energy-edge-service
+    ports:
+      - "5050:5000"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  model-serving:
+    build:
+      context: .
+      dockerfile: src/deployment/Dockerfile
+    container_name: energy-model-serving
+    ports:
+      - "5051:5001"
+    volumes:
+      - ./mlruns:/app/mlruns # fix for absolute path resolution
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
