@@ -151,7 +151,7 @@ Tracks: lookback, horizon, units, dropout, MAE, RMSE, MAPE per run
 - [x] Persistence baseline model
 - [x] LSTM model (3.35% MAPE)
 - [x] MLflow experiment tracking
-- [ ] Edge preprocessing Docker service
+- [x] Edge preprocessing Docker service
 - [ ] Azure Container Registry integration
 - [ ] Azure Container Instances deployment
 - [ ] CI/CD pipeline (GitHub Actions)
