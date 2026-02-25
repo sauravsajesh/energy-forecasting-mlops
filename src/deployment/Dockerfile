@@ -1,18 +1,17 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install dependencies
+ENV PIP_TRUSTED_HOST="pypi.org pypi.python.org files.pythonhosted.org"
+ENV PIP_NO_CACHE_DIR=1
+
+RUN pip install --upgrade pip
+
 COPY requirements-deployment.txt .
-RUN pip install --no-cache-dir -r requirements-deployment.txt
+RUN pip install -r requirements-deployment.txt
 
-# Copy source code
-COPY src/ src/
-COPY mlruns/ mlruns/
-
-ENV PYTHONPATH=src
-ENV PYTHONUNBUFFERED=1
+COPY src/deployment/model_api.py .
 
 EXPOSE 5001
 
-CMD ["python", "src/deployment/model_api.py"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "1", "--timeout", "300", "model_api:app"]
