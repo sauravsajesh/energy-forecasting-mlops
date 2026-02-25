@@ -24,14 +24,13 @@ jobs:
           docker build \
             -t energyforecastacr.azurecr.io/energy-model-serving:latest \
             -t energyforecastacr.azurecr.io/energy-model-serving:${{ github.sha }} \
-            -f src/deployment/Dockerfile src/deployment/
+            -f src/deployment/Dockerfile .
 
           docker push energyforecastacr.azurecr.io/energy-model-serving:latest
           docker push energyforecastacr.azurecr.io/energy-model-serving:${{ github.sha }}
 
       - name: Install Azure CLI
-        run: |
-          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+        run: curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
       - name: Azure CLI login
         run: |
