@@ -25,7 +25,6 @@ jobs:
             -t energyforecastacr.azurecr.io/energy-model-serving:latest \
             -t energyforecastacr.azurecr.io/energy-model-serving:${{ github.sha }} \
             -f src/deployment/Dockerfile .
-
           docker push energyforecastacr.azurecr.io/energy-model-serving:latest
           docker push energyforecastacr.azurecr.io/energy-model-serving:${{ github.sha }}
 
@@ -46,7 +45,6 @@ jobs:
             --name energy-model-serving \
             --resource-group rg-energy-mlops \
             --yes 2>/dev/null || true
-
           az container create \
             --resource-group rg-energy-mlops \
             --name energy-model-serving \
