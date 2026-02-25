@@ -1,11 +1,11 @@
-name: Build and Deploy to ACI
+name: Build and Push to ACR
 
 on:
   push:
     branches: [main]
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,40 +28,13 @@ jobs:
           docker push energyforecastacr.azurecr.io/energy-model-serving:latest
           docker push energyforecastacr.azurecr.io/energy-model-serving:${{ github.sha }}
 
-      - name: Install Azure CLI
-        run: curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-
-      - name: Azure CLI login
+      - name: Run endpoint tests
         run: |
-          az login \
-            --username ${{ secrets.ACR_USERNAME }} \
-            --password ${{ secrets.ACR_PASSWORD }} \
-            --tenant ${{ secrets.AZURE_TENANT_ID }} \
-            --allow-no-subscriptions || true
+          pip install requests numpy
+          python tests/test_endpoint.py
 
-      - name: Redeploy ACI
+      - name: Summary
         run: |
-          az container delete \
-            --name energy-model-serving \
-            --resource-group rg-energy-mlops \
-            --yes 2>/dev/null || true
-          az container create \
-            --resource-group rg-energy-mlops \
-            --name energy-model-serving \
-            --image energyforecastacr.azurecr.io/energy-model-serving:latest \
-            --registry-login-server energyforecastacr.azurecr.io \
-            --registry-username ${{ secrets.ACR_USERNAME }} \
-            --registry-password ${{ secrets.ACR_PASSWORD }} \
-            --ports 5001 \
-            --dns-name-label energy-model-saurav \
-            --location westeurope \
-            --cpu 1 \
-            --memory 2
-
-      - name: Wait for ACI to start
-        run: sleep 40
-
-      - name: Validate health endpoint
-        run: |
-          curl --fail \
-            http://energy-model-saurav.westeurope.azurecontainer.io:5001/health
+          echo "✅ Image built and pushed to ACR"
+          echo "📦 Tag: energyforecastacr.azurecr.io/energy-model-serving:${{ github.sha }}"
+          echo "🌐 Live endpoint: http://energy-model-saurav.westeurope.azurecontainer.io:5001"
